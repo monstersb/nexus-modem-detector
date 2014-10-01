@@ -1,0 +1,12 @@
+#! /bin/bash
+
+rm -f modem.tar.gz
+rm -rf ./modem_file
+adb shell su -c "ls -al /firmware/image/"
+adb shell su -c "rm -f /sdcard/modem.tar.gz"
+adb shell su -c "tar -zcv -f /sdcard/modem.tar.gz -C /firmware/image ./"
+adb pull /sdcard/modem.tar.gz modem.tar.gz
+mkdir modem_file
+tar -zxv -f modem.tar.gz -C modem_file
+chmod 600 modem_file/*
+chmod 600 modem.tar.gz
