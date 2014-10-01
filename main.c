@@ -1,8 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <elf.h>
 #include <errno.h>
 #include <string.h>
+#include "elf.h"
 
 #define error() fprintf(stderr, \
     "Error in %s on line %d : %s\n", \
@@ -29,10 +29,12 @@ int main(int argc, char *argv[]) {
         return -1;
     }
 
-    char *s = "a";
-    strcpy(workspace, (const char *)"");
-    return 0;
     strncpy(workspace, argv[1], sizeof(workspace));
+	if (access(workspace, 0x04) != 00) {
+		error();
+        printf("Usage:\t%s workspace\n", argv[0]);
+        return -1;
+	}
     t_buffer *buf00 = readfile(0);
     if (buf00 == NULL) {
         error();
