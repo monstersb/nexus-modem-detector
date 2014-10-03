@@ -172,16 +172,20 @@ int information(t_byte *buffer) {
 	printf("\n");
 	printf("Program Headers:\n");
 	prohdr = (Elf32_Phdr*)(buffer + elfhdr->e_phoff);
+	printf("\t\tType\tOffset\t\tFile size\tVirtual address\tMemory size\tFlags\tAlignment\n");
 	for (i = 0;i < elfhdr->e_phnum;i++) {
-		printf("\t[%d]Type: %d\n", i, prohdr[i].p_type);
-		printf("\t[%d]Offset: %08X\n", i, prohdr[i].p_offset);
-		printf("\t[%d]File size: %08X\n", i, prohdr[i].p_filesz);
-		printf("\t[%d]Virtual address: %08X\n", i, prohdr[i].p_vaddr);
-		printf("\t[%d]Physical address: %08X\n", i, prohdr[i].p_paddr);
-		printf("\t[%d]Memory size: %08X\n", i, prohdr[i].p_memsz);
-		printf("\t[%d]Flags: %08X\n", i, prohdr[i].p_flags);
-		printf("\t[%d]Alignment: %08X\n", i, prohdr[i].p_align);
-		printf("\n");
+		printf("\t[%d]\t%s", i, prohdr[i].p_type == 1 ? "LOAD" : "NULL");
+		printf("\t%08X", prohdr[i].p_offset);
+		printf("\t%08X", prohdr[i].p_filesz);
+		printf("\t%08X", prohdr[i].p_vaddr);
+		//printf("\t[%d]Physical address: %08X\n", i, prohdr[i].p_paddr);
+		printf("\t%08X", prohdr[i].p_memsz);
+		printf("\t%s%s%s", 
+			(prohdr[i].p_flags & PF_R ? "R" : ""),
+			(prohdr[i].p_flags & PF_W ? "W" : ""),
+			(prohdr[i].p_flags & PF_X ? "X" : "")
+			);
+		printf("\t%08X\n", prohdr[i].p_align);
 	}
 
 	return 0;
