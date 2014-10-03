@@ -1,2 +1,4 @@
 *.swp
+*.dSYM
 test
+modem_files/*

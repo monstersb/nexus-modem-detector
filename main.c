@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <errno.h>
 #include <string.h>
+#include <unistd.h>
 #include "elf.h"
 
 #define error() fprintf(stderr, \
@@ -9,6 +10,8 @@
     __FILE__, \
     __LINE__, \
     strerror(errno))
+
+#define HEADER_FILE 0
 
 typedef unsigned char t_byte;
 typedef long t_length;
@@ -21,6 +24,8 @@ typedef struct {
 char workspace[0x100] = { 0 };
 
 t_buffer *readfile(int fnumber);
+int buildelf();
+int information(t_byte *buffer);
 
 int main(int argc, char *argv[]) {
 
@@ -32,16 +37,10 @@ int main(int argc, char *argv[]) {
     strncpy(workspace, argv[1], sizeof(workspace));
 	if (access(workspace, 0x04) != 00) {
 		error();
-        printf("Usage:\t%s workspace\n", argv[0]);
         return -1;
 	}
-    t_buffer *buf00 = readfile(0);
-    if (buf00 == NULL) {
-        error();
-        return -1;
-    }
 
-    return 0;
+    return buildelf();
 }
 
 t_buffer *readfile(int fnumber) {
@@ -61,7 +60,6 @@ t_buffer *readfile(int fnumber) {
         fclose(fp);
         return NULL;
     }
-    fclose(fp);
     buffer = (t_buffer*)malloc(sizeof(t_buffer));
     if (buffer == NULL) {
         fclose(fp);
@@ -81,5 +79,93 @@ t_buffer *readfile(int fnumber) {
         fclose(fp);
         return NULL;
     }
+    fclose(fp);
     return buffer;
+}
+
+int buildelf() {
+    t_buffer *bufheader = readfile(HEADER_FILE);
+    if (bufheader == NULL) {
+        error();
+        return -1;
+    }
+
+	if (information(bufheader->buffer) != 0) {
+		fprintf(stderr, "Bad file format!\n");
+		return -1;
+	}
+	return 0;
+}
+
+int information(t_byte *buffer) {
+	Elf32_Ehdr* elfhdr;
+	int i;
+	elfhdr = (Elf32_Ehdr*)buffer;
+	if (elfhdr->e_ident[EI_MAG0] != ELFMAG0
+		|| elfhdr->e_ident[EI_MAG1] != ELFMAG1
+		|| elfhdr->e_ident[EI_MAG2] != ELFMAG2
+		|| elfhdr->e_ident[EI_MAG3] != ELFMAG3) {
+		return -1;
+	}
+	printf("ELF header:\n");
+
+	printf("\tMagic: ");
+	for (i = 0;i < EI_NIDENT;i++) {
+		printf("%02X ", elfhdr->e_ident[i]);
+	}
+	printf("\n");
+
+	switch (elfhdr->e_ident[EI_CLASS]) {
+	case ELFCLASSNONE:
+		printf("\tClass: Invalid class\n");
+		break;
+	case ELFCLASS32:
+		printf("\tClass: 32 bit ELF class\n");
+		break;
+	case ELFCLASS64:
+		printf("\tClass: 64 bit ELF class\n");
+		break;
+	default:
+		return -1;
+	}
+
+	switch (elfhdr->e_ident[EI_DATA]) {
+	case ELFDATANONE:
+		printf("\tData format: Unknown data format\n");
+		break;
+	case ELFDATA2LSB:
+		printf("\tData format: Little endian\n");
+		break;
+	case ELFDATA2MSB:
+		printf("\tData format: Big endian\n");
+		break;
+	default:
+		return -1;
+	}
+
+	switch (elfhdr->e_type) {
+	case ET_NONE:
+		printf("\tType: Unknown type\n");
+		break;
+	case ET_REL:
+		printf("\tType: Relocatable file\n");
+		break;
+	case ET_EXEC:
+		printf("\tType: Executable file\n");
+		break;
+	case ET_DYN:
+		printf("\tType: Shared file\n");
+		break;
+	case ET_CORE:
+		printf("\tType: Core file\n");
+		break;
+	default:
+		return -1;
+	}
+
+	printf("\tEntry: %08X\n", elfhdr->e_entry);
+	printf("\tOffset of program headers: %08X\n", elfhdr->e_phoff);
+	printf("\tNumber of programs headers: %d\n", elfhdr->e_phnum);
+	printf("\tSize of program headers: %08X\n", elfhdr->e_phentsize);
+	return 0;
 }
