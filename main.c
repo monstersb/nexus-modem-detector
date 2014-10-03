@@ -98,7 +98,8 @@ int buildelf() {
 }
 
 int information(t_byte *buffer) {
-	Elf32_Ehdr* elfhdr;
+	Elf32_Ehdr *elfhdr;
+	Elf32_Phdr *prohdr;
 	int i;
 	elfhdr = (Elf32_Ehdr*)buffer;
 	if (elfhdr->e_ident[EI_MAG0] != ELFMAG0
@@ -164,8 +165,24 @@ int information(t_byte *buffer) {
 	}
 
 	printf("\tEntry: %08X\n", elfhdr->e_entry);
-	printf("\tOffset of program headers: %08X\n", elfhdr->e_phoff);
+	printf("\tOffset of program header: %08X\n", elfhdr->e_phoff);
+	printf("\tSize of program header: %08X\n", elfhdr->e_phentsize);
 	printf("\tNumber of programs headers: %d\n", elfhdr->e_phnum);
-	printf("\tSize of program headers: %08X\n", elfhdr->e_phentsize);
+
+	printf("\n");
+	printf("Program Headers:\n");
+	prohdr = (Elf32_Phdr*)(buffer + elfhdr->e_phoff);
+	for (i = 0;i < elfhdr->e_phnum;i++) {
+		printf("\t[%d]Type: %d\n", i, prohdr[i].p_type);
+		printf("\t[%d]Offset: %08X\n", i, prohdr[i].p_offset);
+		printf("\t[%d]File size: %08X\n", i, prohdr[i].p_filesz);
+		printf("\t[%d]Virtual address: %08X\n", i, prohdr[i].p_vaddr);
+		printf("\t[%d]Physical address: %08X\n", i, prohdr[i].p_paddr);
+		printf("\t[%d]Memory size: %08X\n", i, prohdr[i].p_memsz);
+		printf("\t[%d]Flags: %08X\n", i, prohdr[i].p_flags);
+		printf("\t[%d]Alignment: %08X\n", i, prohdr[i].p_align);
+		printf("\n");
+	}
+
 	return 0;
 }
